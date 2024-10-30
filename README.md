@@ -46,10 +46,13 @@ services:
     volumes:
       - /storage/squad/:/home/steam/squad-dedicated/
     environment:
+      - MULTIHOME="" #IF YOY HAVE MULTIPLE IP ADDRESSES, PUT THE ONE YOU WANT TO WORK HERE
       - PORT=7787
       - QUERYPORT=27165
+      - BEACONPORT=15000
       - RCONPORT=21114
       - FIXEDMAXPLAYERS=100
+      - SERVER_NAME="Squad Dedicated Server"
 ```
 
 # Configuration
@@ -58,11 +61,15 @@ Feel free to overwrite these environment variables, using -e (--env):
 ```dockerfile
 PORT=7787
 QUERYPORT=27165
+BEACONPORT=15000
 RCONPORT=21114
 FIXEDMAXPLAYERS=80
 FIXEDMAXTICKRATE=50
 RANDOM=NONE
 MODS="()"
+SERVER_NAME="Squad Dedicated Server"
+
+MULTIHOME=x.x.x.x - use only if you have multiple IP addresses enter server IP instead of x.x.x.x
 ```
 
 ## Config

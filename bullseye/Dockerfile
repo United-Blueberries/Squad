@@ -26,6 +26,7 @@ RUN set -x \
 
 ENV PORT=7787 \
 	QUERYPORT=27165 \
+	BEACONPORT=15000 \
 	RCONPORT=21114 \
 	FIXEDMAXPLAYERS=80 \
 	FIXEDMAXTICKRATE=50 \
@@ -40,7 +41,6 @@ CMD ["bash", "entry.sh"]
 
 # Expose ports
 EXPOSE 7787/udp \
-	27165/tcp \
+	15000/udp \
 	27165/udp \
 	21114/tcp \
-	21114/udp
