@@ -1,6 +1,7 @@
-[![](https://img.shields.io/codacy/grade/ac35171da5ca4fc29cfcdd2f7c1f7833)](https://hub.docker.com/r/cm2network/squad/) [![Docker Build Status](https://img.shields.io/docker/cloud/build/cm2network/squad.svg)](https://hub.docker.com/r/cm2network/squad/) [![Docker Stars](https://img.shields.io/docker/stars/cm2network/squad.svg)](https://hub.docker.com/r/cm2network/squad/) [![Docker Pulls](https://img.shields.io/docker/pulls/cm2network/squad.svg)](https://hub.docker.com/r/cm2network/squad/) [![](https://img.shields.io/docker/image-size/cm2network/squad)](https://microbadger.com/images/cm2network/squad) [![Discord](https://img.shields.io/discord/747067734029893653)](https://discord.gg/7ntmAwM)
+[![Discord](https://img.shields.io/discord/747067734029893653)](https://discord.gg/7ntmAwM)
 # Supported tags and respective `Dockerfile` links
--	[`latest` (*bullseye/Dockerfile*)](https://github.com/CM2Walki/Squad/blob/master/bullseye/Dockerfile)
+-	[`latest`, `trixie` (*trixie/Dockerfile*)](https://github.com/United-Blueberries/Squad/blob/master/trixie/Dockerfile)
+-	[`bullseye` (*bullseye/Dockerfile*)](https://github.com/United-Blueberries/Squad/blob/master/bullseye/Dockerfile)
 
 # What is Squad?
 Squad is a tactical FPS that provides authentic combat experiences through teamwork, communication, and gameplay. It seeks to bridge the large gap between arcade shooter and military simulation. Large scale, combined arms combat, base building, and a great integrated VoIP system. <br/>
@@ -15,19 +16,19 @@ This Docker image contains the dedicated server of the game. <br/>
 ## Hosting a simple game server
 Running on the *host* interface (recommended):<br/>
 ```console
-$ docker run -d --net=host -v /home/steam/squad-dedicated/ --name=squad-dedicated cm2network/squad
+$ docker run -d --net=host -v /home/steam/squad-dedicated/ --name=squad-dedicated ghcr.io/united-blueberries/squad
 ```
 
 Running using a bind mount for data persistence on container recreation:
 ```console
 $ mkdir -p $(pwd)/squad-data
 $ chmod 777 $(pwd)/squad-data # Makes sure the directory is writeable by the unprivileged container user
-$ docker run -d --net=host -v $(pwd)/squad-data:/home/steam/squad-dedicated/ --name=squad-dedicated cm2network/squad
+$ docker run -d --net=host -v $(pwd)/squad-data:/home/steam/squad-dedicated/ --name=squad-dedicated ghcr.io/united-blueberries/squad
 ```
 
 Running multiple instances (iterate PORT, QUERYPORT and RCONPORT):<br/>
 ```console
-$ docker run -d --net=host -v /home/steam/squad-dedicated/ -e PORT=7788 -e QUERYPORT=27166 -e RCONPORT=21115 --name=squad-dedicated2 cm2network/squad
+$ docker run -d --net=host -v /home/steam/squad-dedicated/ -e PORT=7788 -e QUERYPORT=27166 -e RCONPORT=21115 --name=squad-dedicated2 ghcr.io/united-blueberries/squad
 ```
 
 **It's also recommended using "--cpuset-cpus=" to limit the game server to a specific core & thread.**<br/>
@@ -39,7 +40,7 @@ version: '3.9'
 
 services:
   squad:
-    image: cm2network/squad
+    image: ghcr.io/united-blueberries/squad
     container_name: squad
     restart: unless-stopped
     network_mode: "host"
