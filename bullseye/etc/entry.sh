@@ -7,6 +7,9 @@ run_steamcmd() {
 			return 0
 		fi
 		echo "steamcmd command failed (attempt ${attempt}/3), retrying..." >&2
+		# a failed attempt can leave stale partial-download state that jams every
+		# subsequent attempt with "Timed out waiting for update to start" - clear it
+		rm -rf "${STEAMAPPDIR}/steamapps/downloading" "${STEAMAPPDIR}/steamapps/temp"
 		sleep 5
 	done
 	return 1
@@ -20,14 +23,12 @@ then
 					+app_update "${STEAM_BETA_APP}" \
 					-beta "${STEAM_BETA_BRANCH}" \
 					-betapassword "${STEAM_BETA_PASSWORD}" \
-					validate \
 					+quit
 else
 	echo "Loading Steam Release Branch"
 	run_steamcmd +force_install_dir "${STEAMAPPDIR}" \
 					+login anonymous \
 					+app_update "${STEAMAPPID}" \
-					validate \
 					+quit
 fi || { echo "steamcmd failed to update Squad after 3 attempts, aborting" >&2; exit 1; }
 
