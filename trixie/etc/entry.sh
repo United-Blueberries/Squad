@@ -1,20 +1,35 @@
 #!/bin/bash
+
+run_steamcmd() {
+	local attempt
+	for attempt in 1 2 3; do
+		if bash "${STEAMCMDDIR}/steamcmd.sh" "$@"; then
+			return 0
+		fi
+		echo "steamcmd command failed (attempt ${attempt}/3), retrying..." >&2
+		sleep 5
+	done
+	return 1
+}
+
 if [ -n "${STEAM_BETA_BRANCH}" ]
 then
 	echo "Loading Steam Beta Branch"
-	bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
+	run_steamcmd +force_install_dir "${STEAMAPPDIR}" \
 					+login anonymous \
 					+app_update "${STEAM_BETA_APP}" \
 					-beta "${STEAM_BETA_BRANCH}" \
 					-betapassword "${STEAM_BETA_PASSWORD}" \
+					validate \
 					+quit
 else
 	echo "Loading Steam Release Branch"
-	bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
+	run_steamcmd +force_install_dir "${STEAMAPPDIR}" \
 					+login anonymous \
 					+app_update "${STEAMAPPID}" \
+					validate \
 					+quit
-fi
+fi || { echo "steamcmd failed to update Squad after 3 attempts, aborting" >&2; exit 1; }
 
 # Change rcon port on first launch, because the default config overwrites the commandline parameter (you can comment this out if it has done it's purpose)
 sed -i -e 's/Port=21114/'"Port=${RCONPORT}"'/g' "${STEAMAPPDIR}/SquadGame/ServerConfig/Rcon.cfg"
@@ -37,7 +52,8 @@ then
 	echo "Installing Mods..."
 	for MODID in "${MODS[@]}"; do
 		echo "> Install mod '${MODID}'"
-		"${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" +login anonymous +workshop_download_item "${WORKSHOPID}" "${MODID}" +quit
+		run_steamcmd +force_install_dir "${STEAMAPPDIR}" +login anonymous +workshop_download_item "${WORKSHOPID}" "${MODID}" +quit \
+			|| echo "Warning: failed to download mod '${MODID}', continuing..." >&2
 
 		echo -e "\n> Link mod content '${MODID}'"
 		ln -s "${STEAMAPPDIR}/steamapps/workshop/content/${WORKSHOPID}/${MODID}" "${MODPATH}/${MODID}"
