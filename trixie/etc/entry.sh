@@ -7,6 +7,9 @@ run_steamcmd() {
 			return 0
 		fi
 		echo "steamcmd command failed (attempt ${attempt}/3), retrying..." >&2
+		# a failed attempt can leave stale partial-download state that jams every
+		# subsequent attempt with "Timed out waiting for update to start" - clear it
+		rm -rf "${STEAMAPPDIR}/steamapps/downloading" "${STEAMAPPDIR}/steamapps/temp"
 		sleep 5
 	done
 	return 1
