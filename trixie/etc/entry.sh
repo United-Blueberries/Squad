@@ -1,7 +1,13 @@
 #!/bin/bash
 
 run_steamcmd() {
-	local attempt
+	local attempt args=("$@") appid
+	for ((i=0; i<${#args[@]}; i++)); do
+		if [[ "${args[i]}" == "+app_update" ]]; then
+			appid="${args[i+1]}"
+			break
+		fi
+	done
 	for attempt in 1 2 3; do
 		if bash "${STEAMCMDDIR}/steamcmd.sh" "$@"; then
 			return 0
@@ -10,6 +16,10 @@ run_steamcmd() {
 		# a failed attempt can leave stale partial-download state that jams every
 		# subsequent attempt with "Timed out waiting for update to start" - clear it
 		rm -rf "${STEAMAPPDIR}/steamapps/downloading" "${STEAMAPPDIR}/steamapps/temp"
+		# steamcmd persists a failed update's StateFlags into the app's manifest;
+		# on the next attempt it reads that stale state and aborts instantly with
+		# "state is 0x6" instead of retrying - clear it so steamcmd rebuilds it
+		[ -n "${appid}" ] && rm -f "${STEAMAPPDIR}/steamapps/appmanifest_${appid}.acf"
 		sleep 5
 	done
 	return 1
