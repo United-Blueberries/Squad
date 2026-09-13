@@ -1,0 +1,44 @@
+name: Build and Publish Docker Images
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'bullseye/**'
+      - 'trixie/**'
+      - '.github/workflows/docker-publish.yml'
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - variant: bullseye
+            tags: ghcr.io/united-blueberries/squad:bullseye
+          - variant: trixie
+            tags: |
+              ghcr.io/united-blueberries/squad:latest
+              ghcr.io/united-blueberries/squad:trixie
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.variant }}
+          push: true
+          tags: ${{ matrix.tags }}
+          platforms: linux/amd64

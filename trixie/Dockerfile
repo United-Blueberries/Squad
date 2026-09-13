@@ -1,7 +1,7 @@
 ############################################################
 # Dockerfile that builds a Squad Gameserver
 ############################################################
-FROM cm2network/steamcmd:root-bullseye
+FROM cm2network/steamcmd:root-trixie
 
 LABEL maintainer="walentinlamonos@gmail.com"
 
