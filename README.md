@@ -90,5 +90,10 @@ Add each id to the MODS environment variable, for example `MODS="(13371337 12341
 
 You can get the mod id from the workshop url or by installing it locally and lookup the numeric folder name at `<root_steam_folder>/steamapps/workshop/content/393380`.
 
+## Troubleshooting
+
+- The container runs as uid 1000. If `SquadGame/ServerConfig` (often a git checkout) is owned by root, updates fail with `File commit failed: failed to move in file (Disk write failure)`. Keep the data dir owned by uid 1000 (`chown -R 1000:1000 <data dir>`) and don't run git there as root.
+- steamcmd can print `Success! App ... fully installed.` even after failing, so `entry.sh` checks the build ID in the appmanifest instead of trusting steamcmd's output. When an update is needed it also removes the appmanifest first, because Steam denies the installed build's (old) depot manifest to anonymous logins (`Access Denied`).
+
 # Contributors
 [![Contributors Display](https://badges.pufler.dev/contributors/CM2Walki/Squad?size=50&padding=5&bots=false)](https://github.com/CM2Walki/Squad/graphs/contributors)
