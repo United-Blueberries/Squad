@@ -1,22 +1,61 @@
 #!/bin/bash
-rm -f "${STEAMAPPDIR}/steamapps/appmanifest_${STEAMAPPID}.acf"
-
-if [ -n "${STEAM_BETA_BRANCH}" ]
-then
+if [ -n "${STEAM_BETA_BRANCH}" ]; then
 	echo "Loading Steam Beta Branch"
-	bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
-					+login anonymous \
-					+app_update "${STEAM_BETA_APP}" \
-					-beta "${STEAM_BETA_BRANCH}" \
-					-betapassword "${STEAM_BETA_PASSWORD}" \
-					+quit
+	APP="${STEAM_BETA_APP}"
+	BRANCH="${STEAM_BETA_BRANCH}"
+	BRANCH_ARGS=(-beta "${STEAM_BETA_BRANCH}" -betapassword "${STEAM_BETA_PASSWORD}")
 else
 	echo "Loading Steam Release Branch"
-	bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
-					+login anonymous \
-					+app_update "${STEAMAPPID}" \
-					+quit
+	APP="${STEAMAPPID}"
+	BRANCH="public"
+	BRANCH_ARGS=()
 fi
+MANIFEST="${STEAMAPPDIR}/steamapps/appmanifest_${APP}.acf"
+
+# steamcmd isn't persisted, so it self-updates on every container start. The first
+# app_update after a self-update often bails ("Timed out waiting for update to start")
+# while still printing "Success!". Let it self-update in a throwaway run first.
+bash "${STEAMCMDDIR}/steamcmd.sh" +quit
+
+latest_buildid() {
+	bash "${STEAMCMDDIR}/steamcmd.sh" +login anonymous +app_info_update 1 +app_info_print "${APP}" +quit 2>/dev/null \
+		| sed -n '/"branches"/,$p' | sed -n "/\"${BRANCH}\"/,/}/p" | grep -m1 '"buildid"' | grep -oE '[0-9]+'
+}
+installed_buildid() {
+	# StateFlags 4 = fully installed; anything else means a half-applied update
+	grep -q '"StateFlags"[[:space:]]*"4"' "${MANIFEST}" 2>/dev/null || return
+	grep -m1 '"buildid"' "${MANIFEST}" | grep -oE '[0-9]+'
+}
+
+TARGET="$(latest_buildid)"
+echo "Target build for ${APP}/${BRANCH}: ${TARGET:-unknown}, installed: $(installed_buildid || echo none)"
+
+for attempt in 1 2 3; do
+	# Validate on retries: forces a checksum pass that repairs files a broken patch left behind
+	VALIDATE=()
+	(( attempt > 1 )) && VALIDATE=(validate)
+	echo "Updating (attempt ${attempt}) ${VALIDATE[*]}"
+	bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
+		+login anonymous \
+		+app_update "${APP}" "${BRANCH_ARGS[@]}" "${VALIDATE[@]}" \
+		+quit
+
+	INSTALLED="$(installed_buildid)"
+	if [ -z "${TARGET}" ]; then
+		echo "Could not query latest build from Steam; starting with installed build ${INSTALLED:-none}"
+		break
+	fi
+	if [ "${INSTALLED}" = "${TARGET}" ]; then
+		echo "Install verified at build ${INSTALLED}"
+		break
+	fi
+	echo "Installed build '${INSTALLED:-none}' != target '${TARGET}'"
+	if (( attempt == 3 )); then
+		echo "Update failed after 3 attempts, not starting an outdated server" >&2
+		exit 1
+	fi
+	sleep 10
+done
 
 # Change rcon port on first launch, because the default config overwrites the commandline parameter (you can comment this out if it has done it's purpose)
 sed -i -e 's/Port=21114/'"Port=${RCONPORT}"'/g' "${STEAMAPPDIR}/SquadGame/ServerConfig/Rcon.cfg"
