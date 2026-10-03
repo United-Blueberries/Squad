@@ -34,6 +34,14 @@ for attempt in 1 2 3; do
 	# Validate on retries: forces a checksum pass that repairs files a broken patch left behind
 	VALIDATE=()
 	(( attempt > 1 )) && VALIDATE=(validate)
+	# A delta update needs the *installed* depot manifest, but Steam denies old manifests to
+	# anonymous logins ("Failed to get manifest request code, 'Access Denied'"), so the update
+	# fails with state 0x6. Without an appmanifest, steamcmd instead checksums the existing
+	# files against the new manifest and only downloads what differs.
+	if [ -n "${TARGET}" ] && [ "$(installed_buildid)" != "${TARGET}" ]; then
+		echo "Update needed, removing appmanifest so steamcmd verifies against the new build"
+		rm -f "${MANIFEST}"
+	fi
 	echo "Updating (attempt ${attempt}) ${VALIDATE[*]}"
 	bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
 		+login anonymous \
